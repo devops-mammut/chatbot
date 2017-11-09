@@ -1,8 +1,14 @@
 $(document).ready(function() {
 
 	// Credentials
-	var baseUrl = "https://api.api.ai/v1/query?v=20160910&";
-	var accessToken = "553ab6017e584e0fa351952c8c9ca956";
+    // si apagar
+    var userId = '114696'
+    var roomId = '110736'
+    var baseUrl = "https://e7e74264.ngrok.io";
+    var createThoughtsEndpoint = `/app:mammut-1/graph/user:${userId}/create`
+    var getThoughtsEndpoint = `/app:mammut-1/graph/room:{roomId}/with:=thought?creation-date.last(10)`
+    var locahostMock = 'http://localhost:3000/objects/create_thought'
+    var locahostMockThoughtsResponse = 'http://localhost:3000/objects/get_thoughts/'
 
 	//---------------------------------- Add dynamic html bot content(Widget style) ----------------------------
 	// You can also add the html content in html page and still it will work!
@@ -110,20 +116,27 @@ $(document).ready(function() {
 	});
 
 
-	//------------------------------------------- Send request to API.AI ---------------------------------------
+	//------------------------------------------- Send request to mammut_api ---------------------------------------
 	function send(text) {
 		$.ajax({
-			type: "GET",
-			url: baseUrl+"query="+text+"&lang=en-us&sessionId="+mysession,
+			type: "POST",
+            //url: baseUrl+createThoughtsEndpoint,
+            url: locahostMock,
 			contentType: "application/json",
 			dataType: "json",
+            crossDomain: true,
 			headers: {
-				"Authorization": "Bearer " + accessToken
+                //"Authorization": "Bearer " + accessToken
+                "Access-Control-Allow-Origin":"http://localhost:8080"
 			},
-			// data: JSON.stringify({ query: text, lang: "en", sessionId: "somerandomthing" }),
-			success: function(data) {
-				main(data);
-				// console.log(data);
+            //TODO: sacar de algun lado la fecha, ver como se hace en las primeras lineas de este archivo
+			data: JSON.stringify({"text": text,"creation-date": "20160402-155100","in@room": {"id":{roomId}}}),
+			success: function(response) {
+                if (response.status === "Success"){
+                    console.log(response);
+                    fetchThoughtResponse(response, text);
+                    //main(data);
+                }
 			},
 			error: function(e) {
 				console.log (e);
@@ -132,18 +145,58 @@ $(document).ready(function() {
 	}
 
 
+	//------------------------------------------- fetch response function ------------------------------------------------
+    //TODO:que debe reecibir esta funcion???debve ser la que hace el polling?
+    //TODO: hacer el polling aqui?? de alguna manera chequear el ultimo estado y si cambia actualizarlo?
+    function fetchThoughtResponse(createResponse, text){// TODO:text no se utiliza, solo para tener todos los tipos de respuesta que se aceptan, harcode
+		$.ajax({
+			type: "GET",
+            //url: baseUrl+createThoughtsEndpoint,
+            url: locahostMockThoughtsResponse+text,
+			contentType: "application/json",
+			dataType: "json",
+            crossDomain: true,
+			headers: {
+                //"Authorization": "Bearer " + accessToken
+			},
+			success: function(data) {
+                console.log('api response, before processing',data);
+                main(data);
+			},
+			error: function(e) {
+				console.log (e);
+			}
+		});
+    }
 	//------------------------------------------- Main function ------------------------------------------------
+    //TODO: toma en cuenta que otra funcion hara el polling, y esta funcion main u otra sera quien procesara un(1) resutado o thought, puede recibir como parametro un thought, revisar cuales son los parametros que incluye un thpug??como parseo esos que vienen con foto??preguntarle a mariale
 	function main(data) {
-		var action = data.result.action;
-		var speech = data.result.fulfillment.speech;
+        if (data.message.text){
+            var action = 'text';
+            var speech = data.message.text;
+            console.log('speech', speech)
+        }else if(data.message.attachment.type === 'image'){
+            var action = data.message.attachment.type
+            var image = data.message.attachment.payload.url;
+            console.log('speech', speech)
+        }else if(data.message.attachment.type === 'template'){
+            if (data.message.attachment.payload.template_type === 'generic'){
+                var action = data.message.attachment.payload.template_type
+                var elements = data.message.attachment.payload.elements
+            }
+        }
+        //var speech = data.result.fulfillment.speech;
 		// use incomplete if u use required in api.ai questions in intent
 		// check if actionIncomplete = false
+        /*
 		var incomplete = data.result.actionIncomplete;
 		if(data.result.fulfillment.messages) { // check if messages are there
 			if(data.result.fulfillment.messages.length > 0) { //check if quick replies are there
 				var suggestions = data.result.fulfillment.messages[1];
 			}
 		}
+        */
+        //TODO: estoy redundando?dejar o switch o if's!!
 		switch(action) {
 			// case 'your.action': // set in api.ai
 			// Perform operation/json api call based on action
@@ -152,6 +205,15 @@ $(document).ready(function() {
 			//   addSuggestion(suggestions);
 			// }
 			// break;
+			case 'text': // set in api.ai
+				setBotResponse(speech);
+				break;
+            case 'image': 
+                setBotImageResponse(image);
+				break;
+            case 'generic': 
+                setGenericResponse(elements);
+				break;
 			default:
 				setBotResponse(speech);
 				if(suggestions) { // check if quick replies are there in api.ai
@@ -178,6 +240,54 @@ $(document).ready(function() {
 			hideSpinner();
 		}, 500);
 	}
+
+	//------------------------------------ Set bot image response in result_div -------------------------------------
+	function setBotImageResponse(val) {
+		setTimeout(function(){
+			if($.trim(val) == '') {
+				val = 'I couldn\'t get that. Let\' try something else!'
+				var BotResponse = '<p class="botResult">'+val+'</p><div class="clearfix"></div>';
+				$(BotResponse).appendTo('#result_div');
+			} else {
+				val = val.replace(new RegExp('\r?\n','g'), '<br />');
+                console.log(val)
+                var BotResponse = '<p class="botResult"><img src="'+val+'" alt="Image Not Found" style="width:318px;height:318px;"></p><div class="clearfix"></div>';
+				$(BotResponse).appendTo('#result_div');
+			}
+			scrollToBottomOfResults();
+			hideSpinner();
+		}, 500);
+	}
+
+	//------------------------------------ Set bot generic response in result_div -------------------------------------
+    //TODO: hacer que todo se vea en una sola biurbuja/elemnto
+	function setGenericResponse(val) {
+        var title = val[0].title;
+        var image = val[0].image_url;
+        var buttons = val[0].buttons;
+        //TODO: crear metodos que retornen los elemntos html y que el js los concatene y asi se puede reutilizar y que quede todo dentro de un solo elemento('bot_result')
+        setBotResponse(title);
+        setBotImageResponse(image);
+		addSuggestion(buttons);
+        //TODO: eliminar esta seccion o me sera util??
+        /*
+		setTimeout(function(){
+			if($.trim(val) == '') {
+				val = 'I couldn\'t get that. Let\' try something else!'
+				var BotResponse = '<p class="botResult">'+val+'</p><div class="clearfix"></div>';
+				$(BotResponse).appendTo('#result_div');
+			} else {
+				val = val.replace(new RegExp('\r?\n','g'), '<br />');
+                console.log(val)
+                var BotResponse = '<p class="botResult"><img src="'+val+'" alt="Image Not Found" style="width:318px;height:318px;"></p><div class="clearfix"></div>';
+				$(BotResponse).appendTo('#result_div');
+			}
+			scrollToBottomOfResults();
+			hideSpinner();
+		}, 500);
+        */
+	}
+
 
 
 	//------------------------------------- Set user response in result_div ------------------------------------
@@ -208,15 +318,16 @@ $(document).ready(function() {
 
 
 	//------------------------------------------- Suggestions --------------------------------------------------
+    //TODO: cambiar el elemnto resultante y ponerle un achor o link
 	function addSuggestion(textToAdd) {
 		setTimeout(function() {
-			var suggestions = textToAdd.replies;
-			var suggLength = textToAdd.replies.length;
+			var suggestions = textToAdd;
+			var suggLength = textToAdd.length;
 			$('<p class="suggestion"></p>').appendTo('#result_div');
 			$('<div class="sugg-title">Suggestions: </div>').appendTo('.suggestion');
 			// Loop through suggestions
 			for(i=0;i<suggLength;i++) {
-				$('<span class="sugg-options">'+suggestions[i]+'</span>').appendTo('.suggestion');
+				$('<span class="sugg-options">'+suggestions[i].title+'</span>').appendTo('.suggestion');
 			}
 			scrollToBottomOfResults();
 		}, 1000);
