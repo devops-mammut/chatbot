@@ -151,7 +151,7 @@ $(document).ready(function() {
     function fetchThoughtResponse(createResponse, text){// TODO:text no se utiliza, solo para tener todos los tipos de respuesta que se aceptan, harcode
 		$.ajax({
 			type: "GET",
-            //url: baseUrl+createThoughtsEndpoint,
+            //url: baseUrl+getThoughtsEndpoint,
             url: locahostMockThoughtsResponse+text,
 			contentType: "application/json",
 			dataType: "json",
@@ -165,9 +165,11 @@ $(document).ready(function() {
 			},
 			error: function(e) {
 				console.log (e);
+                setBotResponse('');
 			}
 		});
     }
+
 	//------------------------------------------- Main function ------------------------------------------------
     //TODO: toma en cuenta que otra funcion hara el polling, y esta funcion main u otra sera quien procesara un(1) resutado o thought, puede recibir como parametro un thought, revisar cuales son los parametros que incluye un thpug??como parseo esos que vienen con foto??preguntarle a mariale
 	function main(data) {
@@ -185,26 +187,10 @@ $(document).ready(function() {
                 var elements = data.message.attachment.payload.elements
             }
         }
-        //var speech = data.result.fulfillment.speech;
-		// use incomplete if u use required in api.ai questions in intent
-		// check if actionIncomplete = false
-        /*
-		var incomplete = data.result.actionIncomplete;
-		if(data.result.fulfillment.messages) { // check if messages are there
-			if(data.result.fulfillment.messages.length > 0) { //check if quick replies are there
-				var suggestions = data.result.fulfillment.messages[1];
-			}
-		}
-        */
+
         //TODO: estoy redundando?dejar o switch o if's!!
 		switch(action) {
-			// case 'your.action': // set in api.ai
-			// Perform operation/json api call based on action
-			// Also check if (incomplete = false) if there are many required parameters in an intent
-			// if(suggestions) { // check if quick replies are there in api.ai
-			//   addSuggestion(suggestions);
-			// }
-			// break;
+			// case 'your.action': // set in api
 			case 'text': // set in api.ai
 				setBotResponse(speech);
 				break;
@@ -243,7 +229,7 @@ $(document).ready(function() {
 		}, 500);
 	}
 
-	//------------------------------------ Get image html element -------------------------------------
+	//------------------------------------ Get title html element -------------------------------------
     function getTitleElement(title) {
         return '<div class="generic-title">'+title+' </div>';
     }
@@ -270,6 +256,7 @@ $(document).ready(function() {
             $(getTitleElement(title)).appendTo($('.generic').last());
             $(getImageElement(image)).appendTo($('.generic').last());
             addButtons(buttons);
+			scrollToBottomOfResults();
             hideSpinner();
 		}, 500);
 	}
@@ -290,7 +277,7 @@ $(document).ready(function() {
 	//---------------------------------- Scroll to the bottom of the results div -------------------------------
     //TODO: revisar esto, el problema de que se esconde el input ocurre cuando se ejecuta este metodo
 	function scrollToBottomOfResults() {
-		var terminalResultsDiv = document.getElementById('chatCont');
+		var terminalResultsDiv = $('#chatCont')[0];
 		terminalResultsDiv.scrollTop = terminalResultsDiv.scrollHeight;
 	}
 
@@ -305,19 +292,16 @@ $(document).ready(function() {
 
 	//------------------------------------------- Add buttons --------------------------------------------------
 	function addButtons(textToAdd) {
-		setTimeout(function() {
-            console.log(textToAdd)
-			var buttons = textToAdd;
-			var buttonsLength = textToAdd.length;
-            $('<div class="generic-buttons-container"></div>').appendTo('.generic');
-			// Loop through buttons
-			for(i=0;i<buttonsLength;i++) {
-                if(buttons[i].type === "web_url"){
-                    $('<a class="button-options" target="_blank" href="'+buttons[i].url+'">'+buttons[i].title+'</a>').appendTo('.generic-buttons-container');
-                }
-			}
-			scrollToBottomOfResults();
-		}, 1000);
+        console.log(textToAdd)
+        var buttons = textToAdd;
+        var buttonsLength = textToAdd.length;
+        $('<div class="generic-buttons-container"></div>').appendTo('.generic');
+        // Loop through buttons
+        for(i=0;i<buttonsLength;i++) {
+            if(buttons[i].type === "web_url"){
+                $('<a class="button-options" target="_blank" href="'+buttons[i].url+'">'+buttons[i].title+'</a>').appendTo('.generic-buttons-container');
+            }
+        }
 	}
 
 	//------------------------------------------- Suggestions --------------------------------------------------
