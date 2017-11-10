@@ -298,6 +298,22 @@ mybot .spinner .bounce2 {
 }
 /* Spinner End */
 
+/* Generic */
+mybot .generic {
+  background: #fff;
+  color: #000;
+  border-radius: 3px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 400;
+  width: 400px;
+  float: left;
+  box-shadow: 0 0px 1px 0 rgba(0,0,0,0.16), 0 0px 10px 0 rgba(0,0,0,0.12);
+  margin-left: 5px;
+  border-top-left-radius: 0;
+  margin-bottom: 20px;
+  width: 100%;
+}
 
 /* Suggestions */
 mybot .suggestion {
@@ -328,6 +344,19 @@ mybot .suggestion:before {
   margin-top: -12px;
 }
 
+/* Suggestions $ Buttons(same style)*/
+mybot .generic .button-options {
+  display: block;
+  background: #9c27b0;
+  color: #fff;
+  text-align: center;
+  padding: 5px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 300;
+}
 mybot .suggestion .sugg-options {
   display: block;
   background: #9c27b0;
@@ -340,8 +369,17 @@ mybot .suggestion .sugg-options {
   font-size: 14px;
   font-weight: 300;
 }
+mybot .generic-buttons-container{
+    margin-top: 5px
+}
 
 mybot .suggestion .sugg-title {
+  font-size: 15px;
+  font-weight: 300;
+  margin-bottom: 10px;
+}
+
+mybot .generic .generic-title {
   font-size: 15px;
   font-weight: 300;
   margin-bottom: 10px;

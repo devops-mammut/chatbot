@@ -226,6 +226,7 @@ $(document).ready(function() {
 
 	//------------------------------------ Set bot response in result_div -------------------------------------
 	function setBotResponse(val) {
+        console.log(val);
 		setTimeout(function(){
 			if($.trim(val) == '') {
 				val = 'I couldn\'t get that. Let\' try something else!'
@@ -234,58 +235,43 @@ $(document).ready(function() {
 			} else {
 				val = val.replace(new RegExp('\r?\n','g'), '<br />');
 				var BotResponse = '<p class="botResult">'+val+'</p><div class="clearfix"></div>';
+                console.log(BotResponse);
 				$(BotResponse).appendTo('#result_div');
 			}
 			scrollToBottomOfResults();
 			hideSpinner();
 		}, 500);
 	}
+
+	//------------------------------------ Get image html element -------------------------------------
+    function getTitleElement(title) {
+        return '<div class="generic-title">'+title+' </div>';
+    }
+
+	//------------------------------------ Get image html element -------------------------------------
+    function getImageElement(imageUrl) {
+        return '<img src="'+imageUrl+'" alt="Image Not Found" style="width:318px;height:318px;">';
+    }
 
 	//------------------------------------ Set bot image response in result_div -------------------------------------
 	function setBotImageResponse(val) {
-		setTimeout(function(){
-			if($.trim(val) == '') {
-				val = 'I couldn\'t get that. Let\' try something else!'
-				var BotResponse = '<p class="botResult">'+val+'</p><div class="clearfix"></div>';
-				$(BotResponse).appendTo('#result_div');
-			} else {
-				val = val.replace(new RegExp('\r?\n','g'), '<br />');
-                console.log(val)
-                var BotResponse = '<p class="botResult"><img src="'+val+'" alt="Image Not Found" style="width:318px;height:318px;"></p><div class="clearfix"></div>';
-				$(BotResponse).appendTo('#result_div');
-			}
-			scrollToBottomOfResults();
-			hideSpinner();
-		}, 500);
+        var image = getImageElement(val)
+        setBotResponse(image);
 	}
 
 	//------------------------------------ Set bot generic response in result_div -------------------------------------
-    //TODO: hacer que todo se vea en una sola biurbuja/elemnto
 	function setGenericResponse(val) {
         var title = val[0].title;
         var image = val[0].image_url;
         var buttons = val[0].buttons;
-        //TODO: crear metodos que retornen los elemntos html y que el js los concatene y asi se puede reutilizar y que quede todo dentro de un solo elemento('bot_result')
-        setBotResponse(title);
-        setBotImageResponse(image);
-		addSuggestion(buttons);
-        //TODO: eliminar esta seccion o me sera util??
-        /*
 		setTimeout(function(){
-			if($.trim(val) == '') {
-				val = 'I couldn\'t get that. Let\' try something else!'
-				var BotResponse = '<p class="botResult">'+val+'</p><div class="clearfix"></div>';
-				$(BotResponse).appendTo('#result_div');
-			} else {
-				val = val.replace(new RegExp('\r?\n','g'), '<br />');
-                console.log(val)
-                var BotResponse = '<p class="botResult"><img src="'+val+'" alt="Image Not Found" style="width:318px;height:318px;"></p><div class="clearfix"></div>';
-				$(BotResponse).appendTo('#result_div');
-			}
-			scrollToBottomOfResults();
-			hideSpinner();
+            var BotResponse = '<p class="generic"></p><div class="clearfix"></div>';
+            $(BotResponse).appendTo('#result_div');
+            $(getTitleElement(title)).appendTo($('.generic').last());
+            $(getImageElement(image)).appendTo($('.generic').last());
+            addButtons(buttons);
+            hideSpinner();
 		}, 500);
-        */
 	}
 
 
@@ -302,6 +288,7 @@ $(document).ready(function() {
 
 
 	//---------------------------------- Scroll to the bottom of the results div -------------------------------
+    //TODO: revisar esto, el problema de que se esconde el input ocurre cuando se ejecuta este metodo
 	function scrollToBottomOfResults() {
 		var terminalResultsDiv = document.getElementById('chatCont');
 		terminalResultsDiv.scrollTop = terminalResultsDiv.scrollHeight;
@@ -316,9 +303,24 @@ $(document).ready(function() {
 		$('.spinner').hide();
 	}
 
+	//------------------------------------------- Add buttons --------------------------------------------------
+	function addButtons(textToAdd) {
+		setTimeout(function() {
+            console.log(textToAdd)
+			var buttons = textToAdd;
+			var buttonsLength = textToAdd.length;
+            $('<div class="generic-buttons-container"></div>').appendTo('.generic');
+			// Loop through buttons
+			for(i=0;i<buttonsLength;i++) {
+                if(buttons[i].type === "web_url"){
+                    $('<a class="button-options" target="_blank" href="'+buttons[i].url+'">'+buttons[i].title+'</a>').appendTo('.generic-buttons-container');
+                }
+			}
+			scrollToBottomOfResults();
+		}, 1000);
+	}
 
 	//------------------------------------------- Suggestions --------------------------------------------------
-    //TODO: cambiar el elemnto resultante y ponerle un achor o link
 	function addSuggestion(textToAdd) {
 		setTimeout(function() {
 			var suggestions = textToAdd;
