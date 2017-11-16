@@ -198,7 +198,7 @@ $(document).ready(function() {
                 setBotImageResponse(image);
 				break;
             case 'generic': 
-                setGenericResponse(elements);
+                setGenericResponses(elements);
 				break;
 			default:
 				setBotResponse(speech);
@@ -239,27 +239,66 @@ $(document).ready(function() {
         return '<img src="'+imageUrl+'" alt="Image Not Found" style="width:318px;height:318px;">';
     }
 
-	//------------------------------------ Set bot image response in result_div -------------------------------------
+	//------------------------------------ Set bot image responses in result_div -------------------------------------
 	function setBotImageResponse(val) {
         var image = getImageElement(val)
         setBotResponse(image);
 	}
 
 	//------------------------------------ Set bot generic response in result_div -------------------------------------
-	function setGenericResponse(val) {
-        var title = val[0].title;
-        var image = val[0].image_url;
-        var buttons = val[0].buttons;
+	function setGenericResponses(values) {
+        var BotResponse = '<p class="generic"></p><div class="clearfix"></div>';
+        $(BotResponse).appendTo('#result_div');
+        //botones prev y next con handlers
+        $('<a class="prev-button" href="#prev">P</a>').appendTo($('.generic').last());
+        $('<a class="next-button" href="#next">N</a>').appendTo($('.generic').last());
+        $('.next-button').on("click", nextElement)
+        $('.prev-button').on("click", prevElement)
+        values.forEach(setGenericResponse);
+    }
+
+	//------------------------------------ Set bot generic response in result_div -------------------------------------
+	function setGenericResponse(val, index) {
+        console.log('index', index)
+        var title = val.title;
+        var image = val.image_url;
+        var buttons = val.buttons;
 		setTimeout(function(){
-            var BotResponse = '<p class="generic"></p><div class="clearfix"></div>';
-            $(BotResponse).appendTo('#result_div');
-            $(getTitleElement(title)).appendTo($('.generic').last());
-            $(getImageElement(image)).appendTo($('.generic').last());
+            if (index === 0){
+                var BotResponseElement = '<div id="'+ index+'" class="generic-element active"></div>';
+            }else{
+                var BotResponseElement = '<div id="'+ index+'" class="generic-element"></div>';
+            }
+            $(BotResponseElement).appendTo($('.generic').last());
+            $(getTitleElement(title)).appendTo($('.generic-element').last());
+            $(getImageElement(image)).appendTo($('.generic-element').last());
             addButtons(buttons);
 			scrollToBottomOfResults();
             hideSpinner();
 		}, 500);
 	}
+    function nextElement(){
+        console.log('next element function')
+        var $activeElement = $('.active')
+        var $nextActiveElement = $activeElement.next('.generic-element')
+        if ($nextActiveElement.length !== 0){
+            console.log('current element', $activeElement)
+            console.log('next element', $activeElement.next())
+            $nextActiveElement.addClass('active')
+            $activeElement.removeClass('active')
+        }
+    }
+    function prevElement(){
+        console.log('prev element function')
+        var $activeElement = $('.active')
+        var $prevActiveElement = $activeElement.prev('.generic-element')
+        if ($prevActiveElement.length !== 0){
+            console.log('current element', $activeElement)
+            console.log('prev element', $activeElement.prev())
+            $prevActiveElement.addClass('active')
+            $activeElement.removeClass('active')
+        }
+    }
 
 
 
@@ -278,7 +317,9 @@ $(document).ready(function() {
     //TODO: revisar esto, el problema de que se esconde el input ocurre cuando se ejecuta este metodo
 	function scrollToBottomOfResults() {
 		var terminalResultsDiv = $('#chatCont')[0];
+        console.log(terminalResultsDiv.scrollTop)
 		terminalResultsDiv.scrollTop = terminalResultsDiv.scrollHeight;
+        console.log(terminalResultsDiv.scrollTop)
 	}
 
 
@@ -295,11 +336,11 @@ $(document).ready(function() {
         console.log(textToAdd)
         var buttons = textToAdd;
         var buttonsLength = textToAdd.length;
-        $('<div class="generic-buttons-container"></div>').appendTo('.generic');
+        $('<div class="generic-buttons-container"></div>').appendTo($('.generic-element').last());
         // Loop through buttons
         for(i=0;i<buttonsLength;i++) {
             if(buttons[i].type === "web_url"){
-                $('<a class="button-options" target="_blank" href="'+buttons[i].url+'">'+buttons[i].title+'</a>').appendTo('.generic-buttons-container');
+                $('<a class="button-options" target="_blank" href="'+buttons[i].url+'">'+buttons[i].title+'</a>').appendTo($('.generic-buttons-container').last());
             }
         }
 	}

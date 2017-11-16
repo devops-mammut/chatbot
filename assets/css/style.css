@@ -313,6 +313,35 @@ mybot .generic {
   border-top-left-radius: 0;
   margin-bottom: 20px;
   width: 100%;
+  overflow:hidden;
+  position: relative;
+}
+
+mybot .active {
+    display:inline !important;
+}
+
+mybot .prev-button {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom:0;
+    width: 15%;
+    align-items: center;
+    justify-content:center;
+    display:flex;
+    font-size: 18px;
+}
+mybot .next-button {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom:0;
+    width: 15%;
+    align-items: center;
+    justify-content:center;
+    display:flex;
+    font-size: 18px;
 }
 
 /* Suggestions */
@@ -330,6 +359,10 @@ mybot .suggestion {
   border-top-left-radius: 0;
   margin-bottom: 20px;
   width: 100%;
+}
+/*TODO:aqui quede*/
+mybot .generic-element {
+    display : none;
 }
 /* sugestion & generic before (same style)*/
 mybot .generic:before {
