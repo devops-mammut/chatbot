@@ -173,24 +173,36 @@ $(document).ready(function() {
 	//------------------------------------------- Main function ------------------------------------------------
     //TODO: toma en cuenta que otra funcion hara el polling, y esta funcion main u otra sera quien procesara un(1) resutado o thought, puede recibir como parametro un thought, revisar cuales son los parametros que incluye un thpug??como parseo esos que vienen con foto??preguntarle a mariale
 	function main(data) {
-        if (data.message.text){
+        if (data.message.quick_replies){
+            var action = 'quick_replies';
+            var replies = data.message.quick_replies;
+            var title = data.message.text;
+            console.log('replies', replies)
+        }else if(data.message.text){
             var action = 'text';
             var speech = data.message.text;
-            console.log('speech', speech)
+            console.log('speech', speech);
         }else if(data.message.attachment.type === 'image'){
-            var action = data.message.attachment.type
+            var action = data.message.attachment.type;
             var image = data.message.attachment.payload.url;
-            console.log('speech', speech)
+            console.log('speech', speech);
         }else if(data.message.attachment.type === 'template'){
             if (data.message.attachment.payload.template_type === 'generic'){
-                var action = data.message.attachment.payload.template_type
-                var elements = data.message.attachment.payload.elements
+                var action = data.message.attachment.payload.template_type;
+                var elements = data.message.attachment.payload.elements;
+            }else if(data.message.attachment.payload.template_type === 'button'){
+                var action = data.message.attachment.payload.template_type;
+                var text = data.message.attachment.payload.text;
+                var elements = [data.message.attachment.payload];
             }
         }
 
         //TODO: estoy redundando?dejar o switch o if's!!
 		switch(action) {
 			// case 'your.action': // set in api
+			case 'quick_replies': // set in api.ai
+				addSuggestion(title, replies);
+				break;
 			case 'text': // set in api.ai
 				setBotResponse(speech);
 				break;
@@ -198,6 +210,9 @@ $(document).ready(function() {
                 setBotImageResponse(image);
 				break;
             case 'generic': 
+                setGenericResponses(elements);
+				break;
+            case 'button': 
                 setGenericResponses(elements);
 				break;
 			default:
@@ -250,17 +265,19 @@ $(document).ready(function() {
         var BotResponse = '<p class="generic"></p><div class="clearfix"></div>';
         $(BotResponse).appendTo('#result_div');
         //botones prev y next con handlers
-        $('<a class="prev-button" href="#prev">P</a>').appendTo($('.generic').last());
-        $('<a class="next-button" href="#next">N</a>').appendTo($('.generic').last());
-        $('.next-button').on("click", nextElement)
-        $('.prev-button').on("click", prevElement)
+        if (values.length !== 1){
+            $('<a class="prev-button" href="#prev">P</a>').appendTo($('.generic').last());
+            $('<a class="next-button" href="#next">N</a>').appendTo($('.generic').last());
+            $('.next-button').on("click", nextElement)
+            $('.prev-button').on("click", prevElement)
+        }
         values.forEach(setGenericResponse);
     }
 
-	//------------------------------------ Set bot generic response in result_div -------------------------------------
+    //------------------------------------ Set bot generic response in result_div/ works for template_type = button -------------------------------------
 	function setGenericResponse(val, index) {
         console.log('index', index)
-        var title = val.title;
+        var title = val.title || val.text;
         var image = val.image_url;
         var buttons = val.buttons;
 		setTimeout(function(){
@@ -271,12 +288,15 @@ $(document).ready(function() {
             }
             $(BotResponseElement).appendTo($('.generic').last());
             $(getTitleElement(title)).appendTo($('.generic-element').last());
-            $(getImageElement(image)).appendTo($('.generic-element').last());
+            if (image){
+                $(getImageElement(image)).appendTo($('.generic-element').last());
+            }
             addButtons(buttons);
 			scrollToBottomOfResults();
             hideSpinner();
 		}, 500);
 	}
+
     function nextElement(){
         console.log('next element function')
         var $activeElement = $('.active')
@@ -288,6 +308,7 @@ $(document).ready(function() {
             $activeElement.removeClass('active')
         }
     }
+
     function prevElement(){
         console.log('prev element function')
         var $activeElement = $('.active')
@@ -301,7 +322,6 @@ $(document).ready(function() {
     }
 
 
-
 	//------------------------------------- Set user response in result_div ------------------------------------
 	function setUserResponse(val) {
 		var UserResponse = '<p class="userEnteredText">'+val+'</p><div class="clearfix"></div>';
@@ -311,7 +331,6 @@ $(document).ready(function() {
 		showSpinner();
 		$('.suggestion').remove();
 	}
-
 
 	//---------------------------------- Scroll to the bottom of the results div -------------------------------
     //TODO: revisar esto, el problema de que se esconde el input ocurre cuando se ejecuta este metodo
@@ -346,12 +365,13 @@ $(document).ready(function() {
 	}
 
 	//------------------------------------------- Suggestions --------------------------------------------------
-	function addSuggestion(textToAdd) {
+	function addSuggestion(suggestionQuestion, textToAdd) {
+        setBotResponse(suggestionQuestion);
 		setTimeout(function() {
 			var suggestions = textToAdd;
 			var suggLength = textToAdd.length;
 			$('<p class="suggestion"></p>').appendTo('#result_div');
-			$('<div class="sugg-title">Suggestions: </div>').appendTo('.suggestion');
+            //$('<div class="sugg-title">'+ title + ': </div>').appendTo('.suggestion');
 			// Loop through suggestions
 			for(i=0;i<suggLength;i++) {
 				$('<span class="sugg-options">'+suggestions[i].title+'</span>').appendTo('.suggestion');
